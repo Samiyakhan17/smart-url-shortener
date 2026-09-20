@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import urlsRouter from './routes/urls.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -31,6 +32,7 @@ app.use(cookieParser());
 
 app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/urls', urlsRouter);
 
 app.use(notFound);
 app.use(errorHandler);
