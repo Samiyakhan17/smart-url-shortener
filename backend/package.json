@@ -1,0 +1,21 @@
+{
+  "name": "smart-url-shortener-backend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
+  },
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"]
+  }
+}

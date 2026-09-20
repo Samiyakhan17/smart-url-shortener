@@ -1,0 +1,16 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: shortener-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  redis:
+    image: redis:7-alpine
+    container_name: shortener-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo-data:
