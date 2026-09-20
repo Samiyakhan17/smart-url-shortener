@@ -6,3 +6,4 @@ process.env.MONGODB_URI = 'mongodb://localhost:27017/url-shortener-test';
 process.env.JWT_ACCESS_SECRET = 'test-secret-test-secret-test-secret';
 process.env.ANALYTICS_SALT_SECRET = 'test-salt-test-salt-test-salt';
 process.env.LOG_LEVEL = 'silent';
+process.env.BCRYPT_COST = '4'; // low cost so tests run fast
