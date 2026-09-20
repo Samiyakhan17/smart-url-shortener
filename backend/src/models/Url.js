@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { getUrlState } from '../utils/urlState.js';
 
 const urlSchema = new mongoose.Schema(
   {
@@ -33,13 +34,7 @@ const urlSchema = new mongoose.Schema(
 
 // Derived state: nothing has to be written to the database when a link expires.
 urlSchema.virtual('state').get(function state() {
-  const now = new Date();
-  if (this.deletedAt) return 'deleted';
-  if (this.status === 'blocked') return 'blocked';
-  if (this.status === 'disabled') return 'disabled';
-  if (this.startsAt && this.startsAt > now) return 'scheduled';
-  if (this.expiresAt && this.expiresAt <= now) return 'expired';
-  return 'active';
+  return getUrlState(this);
 });
 
 urlSchema.index({ ownerId: 1, deletedAt: 1, createdAt: -1 });
