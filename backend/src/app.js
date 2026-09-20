@@ -9,6 +9,7 @@ import { logger } from './utils/logger.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import urlsRouter from './routes/urls.js';
+import redirectRouter from './routes/redirect.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -33,6 +34,8 @@ app.use(cookieParser());
 app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/urls', urlsRouter);
+// Short links live at the root, e.g. /portfolio. This must come AFTER the /api routes.
+app.use('/', redirectRouter);
 
 app.use(notFound);
 app.use(errorHandler);
