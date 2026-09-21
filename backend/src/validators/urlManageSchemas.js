@@ -3,8 +3,14 @@ import { expiresAt, tag } from './urlSchemas.js';
 
 // GET /urls?page=2&limit=10
 export const listQuerySchema = z.object({
+
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+
+  search: z.string().trim().optional(),
+  status: z.enum(['active', 'disabled', 'blocked']).optional(),
+  favorite: z.coerce.boolean().optional(),
+  sort: z.enum(['createdAt', 'clickCount']).optional(),
 });
 
 // PATCH /urls/:id  -  send only the fields you want to change.

@@ -58,6 +58,96 @@ describe('GET /urls (list)', () => {
     expect(res.body.meta).toEqual({ page: 1, limit: 20, total: 2, totalPages: 1 });
   });
 
+  it('searches my links by title, destination URL or short code', async () => {
+  await makeLink(sam, { title: 'My Portfolio' });
+  await makeLink(sam, { title: 'My Resume' });
+
+  const res = await request(app)
+    .get(`${U}?search=portfolio`)
+    .set(auth(sam));
+
+  expect(res.status).toBe(200);
+  expect(res.body.data).toHaveLength(1);
+  expect(res.body.data[0].title).toBe('My Portfolio');
+});
+
+it('filters my links by status', async () => {
+  const active = await makeLink(sam, { title: 'Active link' });
+  const disabled = await makeLink(sam, { title: 'Disabled link' });
+
+  await request(app)
+    .patch(`${U}/${disabled.id}`)
+    .set(auth(sam))
+    .send({ status: 'disabled' });
+
+  const res = await request(app)
+    .get(`${U}?status=disabled`)
+    .set(auth(sam));
+
+  expect(res.status).toBe(200);
+  expect(res.body.data).toHaveLength(1);
+  expect(res.body.data[0].id).toBe(disabled.id);
+  expect(res.body.data[0].status).toBe('disabled');
+
+  // Make sure the active link was not returned.
+  expect(res.body.data[0].id).not.toBe(active.id);
+});
+
+it('filters my links by favorite status', async () => {
+  const favorite = await makeLink(sam, { title: 'Favorite link' });
+  const normal = await makeLink(sam, { title: 'Normal link' });
+
+  await request(app)
+    .patch(`${U}/${favorite.id}`)
+    .set(auth(sam))
+    .send({ isFavorite: true });
+
+  const res = await request(app)
+    .get(`${U}?favorite=true`)
+    .set(auth(sam));
+
+  expect(res.status).toBe(200);
+  expect(res.body.data).toHaveLength(1);
+  expect(res.body.data[0].id).toBe(favorite.id);
+  expect(res.body.data[0].isFavorite).toBe(true);
+
+  expect(res.body.data[0].id).not.toBe(normal.id);
+});
+
+it('sorts my links by click count', async () => {
+  const first = await makeLink(sam, { title: 'First link' });
+  const second = await makeLink(sam, { title: 'Second link' });
+
+  const firstUrl = urls.find((url) => url._id === first.id);
+  const secondUrl = urls.find((url) => url._id === second.id);
+
+  firstUrl.clickCount = 2;
+  secondUrl.clickCount = 10;
+
+  const res = await request(app)
+    .get(`${U}?sort=clickCount`)
+    .set(auth(sam));
+
+  expect(res.status).toBe(200);
+  expect(res.body.data).toHaveLength(2);
+  expect(res.body.data[0].id).toBe(second.id);
+  expect(res.body.data[1].id).toBe(first.id);
+});
+
+it('sorts my links by newest creation date by default', async () => {
+  const first = await makeLink(sam, { title: 'First link' });
+  const second = await makeLink(sam, { title: 'Second link' });
+
+  const res = await request(app)
+    .get(`${U}?sort=createdAt`)
+    .set(auth(sam));
+
+  expect(res.status).toBe(200);
+  expect(res.body.data).toHaveLength(2);
+  expect(res.body.data[0].id).toBe(second.id);
+  expect(res.body.data[1].id).toBe(first.id);
+});
+
   it('splits long lists into pages', async () => {
     for (let i = 0; i < 3; i += 1) await makeLink(sam);
     const page1 = await request(app).get(`${U}?limit=2&page=1`).set(auth(sam));

@@ -1,9 +1,13 @@
 import { Url } from '../models/Url.js';
+
 import { AppError } from '../utils/errors.js';
+
 import { parseDestinationUrl } from '../utils/urlSafety.js';
+
 import { publicUrl } from './urlService.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
+
 const notFound = () => new AppError(404, 'NOT_FOUND', 'Link not found.');
 
 // Finds a link that belongs to this user. Someone else's link looks exactly like a missing one,
@@ -14,14 +18,33 @@ async function findOwned(ownerId, id) {
   if (!url) throw notFound();
   return url;
 }
-
-export async function listUrls(ownerId, { page, limit }) {
+export async function listUrls(ownerId, { page, limit, search, status, favorite, sort },) {
   const filter = { ownerId, deletedAt: null };
+
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { originalUrl: { $regex: search, $options: 'i' } },
+      { shortCode: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  if (status) {
+  filter.status = status;
+   }
+   
+  if (favorite !== undefined) {
+  filter.isFavorite = favorite;
+  }
+
+  const sortOption = sort === 'clickCount'
+  ? { clickCount: -1 }
+  : { createdAt: -1 };
   const [items, total] = await Promise.all([
     Url.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit),
+  .sort(sortOption)
+  .skip((page - 1) * limit)
+  .limit(limit),
     Url.countDocuments(filter),
   ]);
 
@@ -51,9 +74,11 @@ export async function updateUrl(ownerId, id, changes) {
     url.originalUrl = href;
     url.originalHost = host;
   }
+
   for (const field of ['title', 'expiresAt', 'status', 'isFavorite']) {
     if (field in changes) url[field] = changes[field];
   }
+
   if ('tags' in changes) url.tags = [...new Set(changes.tags)];
 
   await url.save();

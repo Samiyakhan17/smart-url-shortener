@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 // A fake "urls" collection made of a plain list, with the same "shortCode must be unique" rule.
+
 export const urls = [];
 
 export function resetFakeUrls() {
@@ -8,7 +9,18 @@ export function resetFakeUrls() {
 }
 
 function matches(doc, filter) {
-  return Object.entries(filter).every(([key, value]) => (doc[key] ?? null) === value);
+  return Object.entries(filter).every(([key, value]) => {
+    if (key === '$or') {
+      return value.some((condition) => matches(doc, condition));
+    }
+
+    if (value && typeof value === 'object' && '$regex' in value) {
+      const regex = new RegExp(value.$regex, value.$options ?? '');
+      return regex.test(doc[key] ?? '');
+    }
+
+    return (doc[key] ?? null) === value;
+  });
 }
 
 export const FakeUrl = {
@@ -16,7 +28,9 @@ export const FakeUrl = {
     if (urls.some((u) => u.shortCode === data.shortCode)) {
       throw Object.assign(new Error('E11000 duplicate key error'), { code: 11000 });
     }
+
     const now = new Date();
+
     const url = {
       _id: crypto.randomBytes(12).toString('hex'), // looks like a real MongoDB id
       isCustomAlias: false,
@@ -30,12 +44,14 @@ export const FakeUrl = {
       createdAt: now,
       updatedAt: now,
       ...data,
+
       // Like a real document, it can be changed and then saved.
       async save() {
         this.updatedAt = new Date();
         return this;
       },
     };
+
     urls.push(url);
     return url;
   },
@@ -48,43 +64,68 @@ export const FakeUrl = {
       then: (resolve, reject) =>
         Promise.resolve(urls.find((u) => matches(u, filter)) ?? null).then(resolve, reject),
     };
+
     return query;
   },
 
   // A list query: supports .sort({ createdAt: -1 }), .skip() and .limit().
   find: (filter) => {
-    let newestFirst = false;
-    let skipCount = 0;
-    let limitCount = Infinity;
-    const query = {
-      sort: (spec) => {
-        newestFirst = spec?.createdAt === -1;
-        return query;
-      },
-      skip: (n) => {
-        skipCount = n;
-        return query;
-      },
-      limit: (n) => {
-        limitCount = n;
-        return query;
-      },
-      then: (resolve, reject) => {
-        let rows = urls.filter((u) => matches(u, filter));
-        if (newestFirst) rows = rows.reverse();
-        return Promise.resolve(rows.slice(skipCount, skipCount + limitCount)).then(resolve, reject);
-      },
-    };
-    return query;
-  },
+  let sortField = 'createdAt';
+  let sortDirection = -1;
+  let skipCount = 0;
+  let limitCount = Infinity;
+
+  const query = {
+    sort: (spec) => {
+      sortField = Object.keys(spec ?? {})[0] ?? 'createdAt';
+      sortDirection = spec?.[sortField] ?? -1;
+
+      return query;
+    },
+
+    skip: (n) => {
+      skipCount = n;
+      return query;
+    },
+
+    limit: (n) => {
+      limitCount = n;
+      return query;
+    },
+
+    then: (resolve, reject) => {
+      let rows = urls.filter((u) => matches(u, filter));
+
+      rows.sort((a, b) => {
+        const aValue = a[sortField];
+        const bValue = b[sortField];
+
+        if (aValue < bValue) return -1 * sortDirection;
+        if (aValue > bValue) return 1 * sortDirection;
+
+        return 0;
+      });
+
+      return Promise.resolve(
+        rows.slice(skipCount, skipCount + limitCount),
+      ).then(resolve, reject);
+    },
+  };
+
+  return query;
+},
 
   countDocuments: async (filter) => urls.filter((u) => matches(u, filter)).length,
 
   updateOne: async (filter, update) => {
     const url = urls.find((u) => matches(u, filter));
+
     if (!url) return;
-    for (const [key, amount] of Object.entries(update.$inc ?? {}))
+
+    for (const [key, amount] of Object.entries(update.$inc ?? {})) {
       url[key] = (url[key] ?? 0) + amount;
+    }
+
     Object.assign(url, update.$set ?? {});
   },
 };
