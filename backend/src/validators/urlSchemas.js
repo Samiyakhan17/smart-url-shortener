@@ -5,7 +5,7 @@ const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 // An empty text box means "nothing was entered".
 const emptyToUndefined = (value) => (value === '' ? undefined : value);
 
-const expiresAt = z.iso
+export const expiresAt = z.iso
   .datetime({
     offset: true,
     message: 'Expiry must be a valid date and time, like 2027-01-01T00:00:00Z',
@@ -14,7 +14,7 @@ const expiresAt = z.iso
   .refine((date) => date > new Date(), 'Expiry must be in the future')
   .refine((date) => date < new Date(Date.now() + FIVE_YEARS_MS), 'Expiry must be within 5 years');
 
-const tag = z
+export const tag = z
   .string()
   .trim()
   .toLowerCase()
