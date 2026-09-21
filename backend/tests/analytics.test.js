@@ -5,6 +5,7 @@ import { FakeUser, FakeToken, resetFakeDb } from './fakeDb.js';
 import { FakeUrl, resetFakeUrls } from './fakeUrls.js';
 
 const aggregate = jest.fn();
+const countDocuments = jest.fn();
 
 jest.unstable_mockModule('../src/models/User.js', () => ({
   User: FakeUser,
@@ -19,7 +20,7 @@ jest.unstable_mockModule('../src/models/Url.js', () => ({
 }));
 
 jest.unstable_mockModule('../src/models/Click.js', () => ({
-  Click: { aggregate },
+  Click: { aggregate, countDocuments },
 }));
 
 const { default: app } = await import('../src/app.js');
@@ -55,6 +56,7 @@ beforeEach(async () => {
   resetFakeDb();
   resetFakeUrls();
   aggregate.mockReset();
+  countDocuments.mockReset();
 
   sam = await newUser('sam@example.com');
   ana = await newUser('ana@example.com');
@@ -144,5 +146,39 @@ describe('GET /urls/:id/analytics', () => {
       operatingSystems: [],
       countries: [],
     });
+  });
+});
+describe('GET /analytics/summary', () => {
+  it('requires a login', async () => {
+    const res = await request(app)
+      .get('/api/v1/analytics/summary');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns dashboard click totals', async () => {
+    const link = await makeLink(sam);
+
+    countDocuments
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(15)
+      .mockResolvedValueOnce(22);
+
+    const res = await request(app)
+      .get('/api/v1/analytics/summary')
+      .set(auth(sam));
+    expect(res.status).toBe(200);
+
+    expect(res.body).toEqual({
+      success: true,
+      data: {
+        totalClicks: link.clickCount ?? 0,
+        today: 4,
+        last7Days: 15,
+        last30Days: 22,
+      },
+    });
+
+    expect(countDocuments).toHaveBeenCalledTimes(3);
   });
 });

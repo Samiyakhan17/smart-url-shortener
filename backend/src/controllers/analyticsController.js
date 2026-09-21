@@ -8,3 +8,11 @@ export async function get(req, res) {
     data: analytics,
   });
 }
+export async function dashboardTotals(req, res) {
+  const totals = await analyticsService.getDashboardTotals(req.user.id);
+
+  res.json({
+    success: true,
+    data: totals,
+  });
+}

@@ -77,3 +77,51 @@ export async function getUrlAnalytics(ownerId, id) {
     countries: stats.countries,
   };
 }
+export async function getDashboardTotals(ownerId) {
+ const urls = await Url.find({
+  ownerId,
+  deletedAt: null,
+});
+
+  const urlIds = urls.map((url) => url._id);
+
+  const totalClicks = urls.reduce(
+    (total, url) => total + url.clickCount,
+    0,
+  );
+
+  const now = new Date();
+
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [today, last7Days, last30Days] = await Promise.all([
+    Click.countDocuments({
+      urlId: { $in: urlIds },
+      ts: { $gte: startOfToday },
+    }),
+
+    Click.countDocuments({
+      urlId: { $in: urlIds },
+      ts: { $gte: sevenDaysAgo },
+    }),
+
+    Click.countDocuments({
+      urlId: { $in: urlIds },
+      ts: { $gte: thirtyDaysAgo },
+    }),
+  ]);
+
+  return {
+    totalClicks,
+    today,
+    last7Days,
+    last30Days,
+  };
+}

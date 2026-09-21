@@ -9,6 +9,7 @@ import { logger } from './utils/logger.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import urlsRouter from './routes/urls.js';
+import analyticsRouter from './routes/analytics.js';
 import redirectRouter from './routes/redirect.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -34,6 +35,7 @@ app.use(cookieParser());
 app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/urls', urlsRouter);
+app.use('/api/v1/analytics', analyticsRouter);
 // Short links live at the root, e.g. /portfolio. This must come AFTER the /api routes.
 app.use('/', redirectRouter);
 
