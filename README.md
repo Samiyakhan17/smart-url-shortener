@@ -15,4 +15,7 @@ npm run dev
 
 ## Status
 - [x] Phase 0: Project setup
-- [ ] Phase 1: Express foundation + MongoDB
+- [x] Phase 1: Express foundation + MongoDB
+- [x] Phase 2: Login system
+- [x] Phase 3: Core shortener (create, redirect, list, edit, delete)
+- [ ] Phase 4: Analytics and search
