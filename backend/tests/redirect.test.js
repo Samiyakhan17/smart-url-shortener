@@ -7,6 +7,16 @@ import { FakeUrl, urls, resetFakeUrls } from './fakeUrls.js';
 jest.unstable_mockModule('../src/models/User.js', () => ({ User: FakeUser }));
 jest.unstable_mockModule('../src/models/RefreshToken.js', () => ({ RefreshToken: FakeToken }));
 jest.unstable_mockModule('../src/models/Url.js', () => ({ Url: FakeUrl }));
+const clicks = [];
+
+jest.unstable_mockModule('../src/models/Click.js', () => ({
+  Click: {
+    create: async (data) => {
+      clicks.push(data);
+      return data;
+    },
+  },
+}));
 
 const { default: app } = await import('../src/app.js');
 
@@ -23,6 +33,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 beforeEach(() => {
   resetFakeDb();
   resetFakeUrls();
+  clicks.length = 0;
 });
 
 describe('GET /:code with an active link', () => {
@@ -74,6 +85,34 @@ describe('GET /:code with an active link', () => {
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe(site);
   });
+  it('records visitor details without delaying the redirect', async () => {
+  await addLink({ shortCode: 'analytics' });
+
+  const res = await request(app)
+    .get('/analytics')
+    .set(
+      'User-Agent',
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/124.0.0.0 Mobile Safari/537.36',
+    )
+    .set('Referer', 'https://www.linkedin.com/feed/')
+    .set('CF-IPCountry', 'IN');
+
+  expect(res.status).toBe(302);
+  expect(res.headers.location).toBe(site);
+
+  await settle();
+
+  expect(clicks).toHaveLength(1);
+  expect(clicks[0]).toMatchObject({
+    urlId: urls[0]._id,
+    referrerHost: 'linkedin.com',
+    deviceType: 'mobile',
+    browser: 'Chrome',
+    os: 'Android',
+    country: 'IN',
+    isBot: false,
+  });
+});
 });
 
 describe('links that cannot be opened', () => {

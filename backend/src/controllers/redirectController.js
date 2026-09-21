@@ -11,9 +11,11 @@ export async function redirect(req, res) {
     res.redirect(302, url.originalUrl);
 
     // Count the click AFTER the visitor is on their way, so it never slows them down.
-    redirectService
-      .recordClick(url._id)
-      .catch((err) => req.log.error({ err }, 'Failed to record click'));
+    // Record analytics AFTER the visitor is on their way.
+  // This must never delay the redirect.
+   redirectService
+   .recordClick(url._id, req.headers)
+   .catch((err) => req.log.error({ err }, 'Failed to record click'));
     return;
   }
 

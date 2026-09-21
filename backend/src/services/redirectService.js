@@ -1,5 +1,7 @@
 import { Url } from '../models/Url.js';
+import { Click } from '../models/Click.js';
 import { getUrlState } from '../utils/urlState.js';
+import { parseVisitor } from '../utils/visitor.js';
 
 // Random codes and aliases only use letters, numbers, - and _ (3 to 32 characters).
 // Anything else (like /favicon.ico) is rejected straight away, without asking the database.
@@ -38,10 +40,26 @@ export async function resolveCode(code) {
   return { state, url };
 }
 
-// Counts one click. Called after the visitor has already been sent on their way.
-export async function recordClick(urlId) {
-  await Url.updateOne(
-    { _id: urlId },
-    { $inc: { clickCount: 1 }, $set: { lastClickedAt: new Date() } },
-  );
+// Records one click after the redirect has already been sent.
+export async function recordClick(urlId, headers = {}) {
+  const visitor = parseVisitor(headers);
+  const clickedAt = new Date();
+
+  await Promise.all([
+    // Fast total shown on the URL itself.
+    Url.updateOne(
+      { _id: urlId },
+      {
+        $inc: { clickCount: 1 },
+        $set: { lastClickedAt: clickedAt },
+      },
+    ),
+
+    // Detailed analytics event.
+    Click.create({
+      urlId,
+      ts: clickedAt,
+      ...visitor,
+    }),
+  ]);
 }
