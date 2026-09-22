@@ -18,4 +18,5 @@ npm run dev
 - [x] Phase 1: Express foundation + MongoDB
 - [x] Phase 2: Login system
 - [x] Phase 3: Core shortener (create, redirect, list, edit, delete)
-- [ ] Phase 4: Analytics and search
+- [x] Phase 4: Analytics, search, filters, destination history
+- [ ] Phase 5: Rate limiting and API keys
