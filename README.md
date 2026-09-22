@@ -19,4 +19,4 @@ npm run dev
 - [x] Phase 2: Login system
 - [x] Phase 3: Core shortener (create, redirect, list, edit, delete)
 - [x] Phase 4: Analytics, search, filters, destination history
-- [ ] Phase 5: Rate limiting and API keys
+- [x] Phase 5: Rate limiting, plan quotas, API keys, usage

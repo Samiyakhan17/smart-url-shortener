@@ -6,13 +6,15 @@ import { listQuerySchema, updateUrlSchema } from '../validators/urlManageSchemas
 import * as controller from '../controllers/urlController.js';
 import * as manage from '../controllers/urlManageController.js';
 import * as analytics from '../controllers/analyticsController.js';
+import { createLimiter, generalApiLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
 // Every link route needs a logged-in user.
 router.use(requireAuth);
+router.use(generalApiLimiter);
 
-router.post('/', validate(createUrlSchema), controller.create);
+router.post('/', createLimiter, validate(createUrlSchema), controller.create);
 router.get('/', validate(listQuerySchema, 'query'), manage.list);
 router.get('/:id/analytics', analytics.get);
 router.get('/:id/history', manage.history);

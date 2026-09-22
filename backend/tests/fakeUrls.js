@@ -55,7 +55,6 @@ export const FakeUrl = {
     urls.push(url);
     return url;
   },
-
   // Like the real one, this can be chained with .select() and .lean(), and then awaited.
   findOne: (filter) => {
     const query = {
@@ -115,7 +114,13 @@ export const FakeUrl = {
   return query;
 },
 
-  countDocuments: async (filter) => urls.filter((u) => matches(u, filter)).length,
+  countDocuments: async (filter) =>
+    urls.filter((u) =>
+      Object.entries(filter).every(([key, value]) => {
+        if (value && typeof value === 'object' && '$gte' in value) return u[key] >= value.$gte;
+        return matches(u, { [key]: value });
+      }),
+    ).length,
 
   updateOne: async (filter, update) => {
     const url = urls.find((u) => matches(u, filter));

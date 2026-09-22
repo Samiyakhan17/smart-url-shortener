@@ -10,6 +10,8 @@ import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import urlsRouter from './routes/urls.js';
 import analyticsRouter from './routes/analytics.js';
+import keysRouter from './routes/keys.js';
+import usageRouter from './routes/usage.js';
 import redirectRouter from './routes/redirect.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -36,6 +38,8 @@ app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/urls', urlsRouter);
 app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/keys', keysRouter);
+app.use('/api/v1/usage', usageRouter);
 // Short links live at the root, e.g. /portfolio. This must come AFTER the /api routes.
 app.use('/', redirectRouter);
 
