@@ -15,6 +15,7 @@ router.use(requireAuth);
 router.post('/', validate(createUrlSchema), controller.create);
 router.get('/', validate(listQuerySchema, 'query'), manage.list);
 router.get('/:id/analytics', analytics.get);
+router.get('/:id/history', manage.history);
 router.get('/:id', manage.getOne);
 router.patch('/:id', validate(updateUrlSchema), manage.update);
 router.delete('/:id', manage.remove);

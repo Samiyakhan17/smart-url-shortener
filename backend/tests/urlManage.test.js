@@ -7,6 +7,9 @@ import { FakeUrl, urls, resetFakeUrls } from './fakeUrls.js';
 jest.unstable_mockModule('../src/models/User.js', () => ({ User: FakeUser }));
 jest.unstable_mockModule('../src/models/RefreshToken.js', () => ({ RefreshToken: FakeToken }));
 jest.unstable_mockModule('../src/models/Url.js', () => ({ Url: FakeUrl }));
+jest.unstable_mockModule('../src/models/AuditLog.js', () => ({
+  AuditLog: { create: async () => ({}) },
+}));
 
 const { default: app } = await import('../src/app.js');
 

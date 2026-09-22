@@ -7,5 +7,6 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/summary', analytics.dashboardTotals);
+router.get('/:id', analytics.get);
 
 export default router;

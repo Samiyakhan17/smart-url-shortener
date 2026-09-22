@@ -19,3 +19,8 @@ export async function remove(req, res) {
   await urlManageService.deleteUrl(req.user.id, req.params.id);
   res.status(204).end();
 }
+
+export async function history(req, res) {
+  const entries = await urlManageService.getUrlHistory(req.user.id, req.params.id);
+  res.json({ success: true, data: entries });
+}

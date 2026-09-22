@@ -1,10 +1,8 @@
 import { Url } from '../models/Url.js';
-
 import { AppError } from '../utils/errors.js';
-
 import { parseDestinationUrl } from '../utils/urlSafety.js';
-
 import { publicUrl } from './urlService.js';
+import { AuditLog } from '../models/AuditLog.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
 
@@ -18,7 +16,8 @@ async function findOwned(ownerId, id) {
   if (!url) throw notFound();
   return url;
 }
-export async function listUrls(ownerId, { page, limit, search, status, favorite, sort },) {
+
+export async function listUrls(ownerId, { page, limit, search, status, favorite, sort }) {
   const filter = { ownerId, deletedAt: null };
 
   if (search) {
@@ -30,21 +29,20 @@ export async function listUrls(ownerId, { page, limit, search, status, favorite,
   }
 
   if (status) {
-  filter.status = status;
-   }
-   
-  if (favorite !== undefined) {
-  filter.isFavorite = favorite;
+    filter.status = status;
   }
 
-  const sortOption = sort === 'clickCount'
-  ? { clickCount: -1 }
-  : { createdAt: -1 };
+  if (favorite !== undefined) {
+    filter.isFavorite = favorite;
+  }
+
+  const sortOption = sort === 'clickCount' ? { clickCount: -1 } : { createdAt: -1 };
+
   const [items, total] = await Promise.all([
     Url.find(filter)
-  .sort(sortOption)
-  .skip((page - 1) * limit)
-  .limit(limit),
+      .sort(sortOption)
+      .skip((page - 1) * limit)
+      .limit(limit),
     Url.countDocuments(filter),
   ]);
 
@@ -71,6 +69,15 @@ export async function updateUrl(ownerId, id, changes) {
 
   if ('originalUrl' in changes) {
     const { href, host } = parseDestinationUrl(changes.originalUrl);
+    if (href !== url.originalUrl) {
+      await AuditLog.create({
+        urlId: url._id,
+        actorId: ownerId,
+        action: 'destination_changed',
+        before: url.originalUrl,
+        after: href,
+      });
+    }
     url.originalUrl = href;
     url.originalHost = host;
   }
@@ -91,4 +98,9 @@ export async function deleteUrl(ownerId, id) {
   const url = await findOwned(ownerId, id);
   url.deletedAt = new Date();
   await url.save();
+}
+
+export async function getUrlHistory(ownerId, id) {
+  const url = await findOwned(ownerId, id);
+  return AuditLog.find({ urlId: url._id }).sort({ createdAt: -1 }).lean();
 }
