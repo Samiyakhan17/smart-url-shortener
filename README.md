@@ -20,3 +20,4 @@ npm run dev
 - [x] Phase 3: Core shortener (create, redirect, list, edit, delete)
 - [x] Phase 4: Analytics, search, filters, destination history
 - [x] Phase 5: Rate limiting, plan quotas, API keys, usage
+- [x] Phase 6: Frontend UI + dashboard integration
