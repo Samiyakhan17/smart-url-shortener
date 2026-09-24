@@ -32,12 +32,25 @@ export async function listApiKeys(userId) {
 }
 
 export async function revokeApiKey(userId, id) {
-  const key = await ApiKey.findOneAndUpdate(
-    { _id: id, userId, revokedAt: null },
-    { revokedAt: new Date() },
-    { new: true },
-  );
-  if (!key) throw new AppError(404, 'NOT_FOUND', 'API key not found.');
+  const key = await ApiKey.findOne({
+    _id: id,
+    userId,
+  });
+
+  if (!key) {
+    throw new AppError(404, 'NOT_FOUND', 'API key not found.');
+  }
+
+  if (key.revokedAt) {
+    throw new AppError(
+      409,
+      'ALREADY_REVOKED',
+      'API key has already been revoked.'
+    );
+  }
+
+  key.revokedAt = new Date();
+  await key.save();
 }
 
 export async function authenticateApiKey(secret) {
